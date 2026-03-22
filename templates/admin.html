@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+    <style>
+        body {
+            background: black;
+            color: #00ff00;
+            font-family: Courier New, monospace;
+            text-align: center;
+            padding-top: 100px;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        a, button {
+            color: #00ff00;
+            background: transparent;
+            border: 1px solid #00ff00;
+            padding: 10px 16px;
+            border-radius: 10px;
+            text-decoration: none;
+            cursor: pointer;
+            font-family: Courier New, monospace;
+            font-weight: bold;
+        }
+
+        a:hover, button:hover {
+            background: #00ff00;
+            color: black;
+        }
+
+        .top-bar {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .floating-modal {
+            display: none;
+            position: fixed;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 480px;
+            padding: 25px;
+            border-radius: 18px;
+            background: rgba(0, 0, 0, 0.22);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 0, 0.7);
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.35);
+            z-index: 999;
+            text-align: center;
+        }
+
+        .floating-modal.show {
+            display: block;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 16px;
+            font-size: 22px;
+            cursor: pointer;
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .close-btn:hover {
+            color: red;
+        }
+
+        input {
+            width: 85%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #00ff00;
+            background: black;
+            color: #00ff00;
+            font-family: Courier New, monospace;
+        }
+
+        .sample-box {
+            margin-top: 15px;
+            padding: 12px;
+            border: 1px solid rgba(0, 255, 0, 0.5);
+            border-radius: 10px;
+            background: rgba(0, 255, 0, 0.06);
+        }
+
+        .status-text {
+            margin-top: 10px;
+            min-height: 24px;
+            font-size: 14px;
+        }
+
+        .helper {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <button onclick="openRegisterModal()">Add New User</button>
+        <a href="/logout">Logout</a>
+    </div>
+
+    <h1>🛡 ADMIN PANEL ACCESS GRANTED 🛡</h1>
+    <p>Welcome, Administrator.</p>
+
+    <!-- Registration Modal -->
+    <div id="registerModal" class="floating-modal">
+        <span class="close-btn" onclick="closeRegisterModal()">×</span>
+        <h2>Register New Admin</h2>
+
+        <input type="text" id="regUsername" placeholder="New Admin Username">
+
+        <input type="password" id="regPassword" placeholder="Set Password">
+
+        <input type="password" id="regConfirmPassword" placeholder="Confirm Password">
+
+        <div class="sample-box">
+            <p><strong>Behavior Enrollment</strong></p>
+            <p class="helper">
+                Type the same password below 8 times so the system can learn typing behavior.
+            </p>
+
+            <input type="password" id="patternPassword" placeholder="Type password sample here">
+            <p>Samples Collected: <span id="sampleCount">0</span> / 8</p>
+            <button onclick="saveTypingSample()">Save This Sample</button>
+        </div>
+
+        <div class="status-text" id="registerStatus"></div>
+
+        <button onclick="submitRegistration()">Register User</button>
+    </div>
+
+    <script>
+        let enrollmentSamples = [];
+        let currentKeyDownTimes = {};
+        let holdTimes = [];
+        let flightTimes = [];
+        let totalStartTime = null;
+        let totalEndTime = null;
+        let backspaceCount = 0;
+        let keyCount = 0;
+        let lastKeyUpTime = null;
+
+        const patternInput = document.getElementById("patternPassword");
+
+        function openRegisterModal() {
+            document.getElementById("registerModal").classList.add("show");
+            document.getElementById("registerStatus").innerText = "";
+        }
+
+        function closeRegisterModal() {
+            document.getElementById("registerModal").classList.remove("show");
+            resetAllRegistrationData();
+        }
+
+        function resetCurrentTypingCapture() {
+            currentKeyDownTimes = {};
+            holdTimes = [];
+            flightTimes = [];
+            totalStartTime = null;
+            totalEndTime = null;
+            backspaceCount = 0;
+            keyCount = 0;
+            lastKeyUpTime = null;
+        }
+
+        function resetAllRegistrationData() {
+            enrollmentSamples = [];
+            document.getElementById("sampleCount").innerText = "0";
+            document.getElementById("regUsername").value = "";
+            document.getElementById("regPassword").value = "";
+            document.getElementById("regConfirmPassword").value = "";
+            document.getElementById("patternPassword").value = "";
+            document.getElementById("registerStatus").innerText = "";
+            resetCurrentTypingCapture();
+        }
+
+        patternInput.addEventListener("keydown", function(e) {
+            const now = performance.now();
+
+            if (totalStartTime === null) {
+                totalStartTime = now;
+            }
+
+            if (e.key === "Backspace") {
+                backspaceCount++;
+            }
+
+            currentKeyDownTimes[e.key + "_" + now] = now;
+
+            if (lastKeyUpTime !== null) {
+                flightTimes.push(now - lastKeyUpTime);
+            }
+
+            keyCount++;
+        });
+
+        patternInput.addEventListener("keyup", function(e) {
+            const now = performance.now();
+            totalEndTime = now;
+
+            let matchedKey = null;
+            const keys = Object.keys(currentKeyDownTimes);
+
+            for (let i = keys.length - 1; i >= 0; i--) {
+                if (keys[i].startsWith(e.key + "_")) {
+                    matchedKey = keys[i];
+                    break;
+                }
+            }
+
+            if (matchedKey) {
+                const downTime = currentKeyDownTimes[matchedKey];
+                holdTimes.push(now - downTime);
+                delete currentKeyDownTimes[matchedKey];
+            }
+
+            lastKeyUpTime = now;
+        });
+
+        function saveTypingSample() {
+            const regPassword = document.getElementById("regPassword").value;
+            const typedPassword = document.getElementById("patternPassword").value;
+            const status = document.getElementById("registerStatus");
+
+            if (enrollmentSamples.length >= 8) {
+                status.innerText = "You already collected 8 samples.";
+                return;
+            }
+
+            if (!regPassword) {
+                status.innerText = "Set the password first.";
+                return;
+            }
+
+            if (typedPassword !== regPassword) {
+                status.innerText = "Typed sample must exactly match the chosen password.";
+                return;
+            }
+
+            if (holdTimes.length === 0) {
+                status.innerText = "No typing behavior captured yet.";
+                return;
+            }
+
+            const totalTime = totalEndTime && totalStartTime ? (totalEndTime - totalStartTime) : 0;
+
+            const sample = {
+                hold_times: [...holdTimes],
+                flight_times: [...flightTimes],
+                total_time: totalTime,
+                backspace_count: backspaceCount,
+                key_count: keyCount
+            };
+
+            enrollmentSamples.push(sample);
+
+            document.getElementById("sampleCount").innerText = enrollmentSamples.length;
+            status.innerText = "Sample saved successfully.";
+
+            document.getElementById("patternPassword").value = "";
+            resetCurrentTypingCapture();
+        }
+
+        function submitRegistration() {
+            const username = document.getElementById("regUsername").value.trim();
+            const password = document.getElementById("regPassword").value;
+            const confirmPassword = document.getElementById("regConfirmPassword").value;
+            const status = document.getElementById("registerStatus");
+
+            if (!username || !password || !confirmPassword) {
+                status.innerText = "Please fill all fields.";
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                status.innerText = "Password and confirm password do not match.";
+                return;
+            }
+
+            if (enrollmentSamples.length < 8) {
+                status.innerText = "Please collect at least 8 typing samples.";
+                return;
+            }
+
+            fetch("/register-admin", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password,
+                    samples: enrollmentSamples
+                })
+            })
+            .then(async (res) => {
+                const data = await res.json();
+                return { ok: res.ok, data: data };
+            })
+            .then(({ ok, data }) => {
+                status.innerText = data.message;
+
+                if (ok && data.status === "success") {
+                    setTimeout(() => {
+                        closeRegisterModal();
+                    }, 1000);
+                }
+            })
+            .catch(() => {
+                status.innerText = "Server error while registering admin.";
+            });
+        }
+    </script>
+</body>
+</html>

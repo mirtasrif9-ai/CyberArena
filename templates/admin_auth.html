@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Authentication</title>
+    <style>
+        body {
+            background: black;
+            color: #00ff00;
+            font-family: Courier New, monospace;
+            text-align: center;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
+        }
+
+        #matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .login-container {
+            position: relative;
+            width: 450px;
+            padding: 30px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+            border: 2px solid rgba(0, 255, 0, 0.8);
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), inset 0 0 20px rgba(0, 255, 0, 0.1);
+            color: #00ff00;
+            text-align: center;
+            z-index: 999;
+        }
+
+        input {
+            background: black;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 10px;
+            margin: 10px;
+            width: 250px;
+            border-radius: 5px;
+        }
+
+        button {
+            background: #00ff00;
+            border: 1px solid #00ff00;
+            color: black;
+            cursor: pointer;
+            font-weight: bold;
+            padding: 10px;
+            margin: 10px;
+            width: 270px;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background: rgba(2, 50, 0, 0.5);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+        }
+
+        #statusMessage {
+            min-height: 24px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="matrix"></canvas>
+
+<div class="login-container">
+    <h1>Authentication Required</h1>
+
+    <input type="text" id="username" placeholder="Admin Username"><br>
+    <input type="password" id="password" placeholder="Admin Password"><br>
+    <button onclick="adminLogin()">Login</button>
+
+    <div id="statusMessage"></div>
+</div>
+
+<script>
+// =========================
+// Matrix rain effect
+// =========================
+const canvas = document.getElementById('matrix');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()*&^%';
+const fontSize = 16;
+let columns = Math.floor(canvas.width / fontSize);
+let drops = [];
+
+function initDrops() {
+    columns = Math.floor(canvas.width / fontSize);
+    drops = [];
+    for (let x = 0; x < columns; x++) {
+        drops[x] = 1;
+    }
+}
+initDrops();
+window.addEventListener('resize', initDrops);
+
+function draw() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#00ff00';
+    ctx.font = fontSize + 'px monospace';
+
+    for (let i = 0; i < drops.length; i++) {
+        const text = letters.charAt(Math.floor(Math.random() * letters.length));
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+            drops[i] = 0;
+        }
+        drops[i]++;
+    }
+}
+setInterval(draw, 33);
+
+// =========================
+// Keystroke behavior capture
+// =========================
+const passwordInput = document.getElementById("password");
+const statusMessage = document.getElementById("statusMessage");
+
+let currentKeyDownTimes = {};
+let holdTimes = [];
+let flightTimes = [];
+let totalStartTime = null;
+let totalEndTime = null;
+let backspaceCount = 0;
+let keyCount = 0;
+let lastKeyUpTime = null;
+
+function resetBehaviorCapture() {
+    currentKeyDownTimes = {};
+    holdTimes = [];
+    flightTimes = [];
+    totalStartTime = null;
+    totalEndTime = null;
+    backspaceCount = 0;
+    keyCount = 0;
+    lastKeyUpTime = null;
+}
+
+passwordInput.addEventListener("focus", function () {
+    resetBehaviorCapture();
+});
+
+passwordInput.addEventListener("keydown", function (e) {
+    const now = performance.now();
+
+    if (totalStartTime === null) {
+        totalStartTime = now;
+    }
+
+    if (e.key === "Backspace") {
+        backspaceCount++;
+    }
+
+    currentKeyDownTimes[e.key + "_" + now] = now;
+
+    if (lastKeyUpTime !== null) {
+        flightTimes.push(now - lastKeyUpTime);
+    }
+
+    keyCount++;
+});
+
+passwordInput.addEventListener("keyup", function (e) {
+    const now = performance.now();
+    totalEndTime = now;
+
+    let matchedKey = null;
+    const keys = Object.keys(currentKeyDownTimes);
+
+    for (let i = keys.length - 1; i >= 0; i--) {
+        if (keys[i].startsWith(e.key + "_")) {
+            matchedKey = keys[i];
+            break;
+        }
+    }
+
+    if (matchedKey) {
+        const downTime = currentKeyDownTimes[matchedKey];
+        holdTimes.push(now - downTime);
+        delete currentKeyDownTimes[matchedKey];
+    }
+
+    lastKeyUpTime = now;
+});
+
+function buildBehaviorSample() {
+    const totalTime = (totalStartTime !== null && totalEndTime !== null)
+        ? (totalEndTime - totalStartTime)
+        : 0;
+
+    return {
+        hold_times: [...holdTimes],
+        flight_times: [...flightTimes],
+        total_time: totalTime,
+        backspace_count: backspaceCount,
+        key_count: keyCount
+    };
+}
+
+// =========================
+// Admin login
+// =========================
+function adminLogin() {
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+
+    if (!username || !password) {
+        statusMessage.innerText = "Please enter username and password.";
+        return;
+    }
+
+    if (holdTimes.length === 0) {
+        statusMessage.innerText = "Please type the password manually.";
+        return;
+    }
+
+    const behavior_sample = buildBehaviorSample();
+
+    fetch("/admin-login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            username: username,
+            password: password,
+            behavior_sample: behavior_sample
+        })
+    })
+    .then(async (res) => {
+        const data = await res.json();
+        return { ok: res.ok, data: data };
+    })
+    .then(({ ok, data }) => {
+        if (ok && data.status === "success") {
+            statusMessage.innerText = "Login successful.";
+            window.location.href = "/admin";
+        } else {
+            statusMessage.innerText = data.message || "Invalid Admin Credentials ❌";
+        }
+    })
+    .catch(() => {
+        statusMessage.innerText = "Server error during authentication.";
+    });
+}
+</script>
+
+</body>
+</html>
