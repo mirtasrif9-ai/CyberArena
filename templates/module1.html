@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CyberArena - Module 1</title>
+    <style>
+        body {
+            background-color: black;
+            color: #00ff00;
+            font-family: Courier New, monospace;
+            text-align: center;
+            padding-top: 100px;
+            
+        }
+
+        input {
+            background: black;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 10px;
+            margin: 10px;
+            width: 250px;
+        }
+
+        button { 
+            background:#00ff00; 
+            border:1px solid #00ff00;
+            color:black;  
+            cursor:pointer; 
+            font-weight:bold; 
+            padding:10px; 
+            margin:10px; 
+            width:270px; 
+        }
+
+        button:hover { 
+            background:rgba(2, 50, 0, 0.5);
+            border:1px solid #00ff00;
+            color:#00ff00;
+            
+        }
+        .reward-box {
+            position: fixed;
+            top: -300px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 450px;
+            padding: 30px;
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 0, 0.5);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+            color: #00ff00;
+            text-align: center;
+            transition: top 0.8s ease-in-out;
+            z-index: 999;
+        }
+
+        .reward-box button {
+            margin-top: 15px;
+            background: #00ff00;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .reward-box.show {
+            top: 60px;
+        }
+
+        #result {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+ 
+<div style="position:absolute; top:20px; right:30px;">
+  <a href="/module1-ml" style="color:#00ff00; text-decoration:none; border:1px solid #00ff00; padding:8px 12px; border-radius:10px;">
+    🤖 Turn on ML Defense
+  </a>
+</div>
+
+
+<h1>⚠ CyberArena: SQL Injection Lab ⚠</h1>
+
+<input type="text" id="username" placeholder="Enter Username"><br>
+<input type="text" id="password" placeholder="Enter Password"><br>
+
+<button onclick="launchAttack()">Launch Attack</button>
+
+<div id="result"></div>
+<p>User Score: <span id="userScore">0</span></p>
+<p>System Score: <span id="systemScore">0</span></p>
+
+<script>
+function launchAttack() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    fetch("/module1/attack", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ username, password })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("result").innerText = data.result;
+        document.getElementById("userScore").innerText = data.user_score;
+        document.getElementById("systemScore").innerText = data.system_score;
+
+        if (data.reward) {
+            document.getElementById("rewardUser").innerText = data.reward.username;
+            document.getElementById("rewardPass").innerText = data.reward.password;
+
+            document.getElementById("rewardBox").classList.add("show");
+        }
+        
+    });
+}
+
+function openAdminLogin() {
+    window.location.href = "/admin-auth";
+}
+
+function showAdminLogin() {
+    const username = prompt("Enter Admin Username:");
+    const password = prompt("Enter Admin Password:");
+
+    fetch("/admin-login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ username, password })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            alert("Admin Login Successful!");
+            window.location.href = "/admin";
+        } else {
+            alert("Invalid Admin Credentials!");
+        }
+    });
+}
+
+</script>
+
+
+
+<!-- Reward Popup -->
+<div id="rewardBox" class="reward-box">
+    <h2>🎉 ADMIN ACCESS UNLOCKED</h2>
+    <p><strong>Username:</strong> <span id="rewardUser"></span></p>
+    <p><strong>Password:</strong> <span id="rewardPass"></span></p>
+
+    <button onclick="openAdminLogin()">Login as Admin</button>
+</div>
+
+</body>
+</html>
