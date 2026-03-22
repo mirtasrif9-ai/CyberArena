@@ -51,7 +51,8 @@ Designed a gamified cybersecurity system integrating machine learning-based intr
   - Builds a personalized authentication model
 
 ## System Workflow
- ### Overall Flow
+### Overall Flow
 <img width="1374" height="2842" alt="Image" src="https://github.com/user-attachments/assets/931f9d5f-1ca3-48d3-9aad-3acab2ad5b7e" />
- ### Behavioral Authentication Flow
+
+### Behavioral Authentication Flow
 <img width="798" height="2606" alt="Image" src="https://github.com/user-attachments/assets/daa2362e-5a84-44d7-bb6a-4c44df3e240f" />
