@@ -1,21 +1,21 @@
 # CyberArena: AI-Powered Adaptive Web Security Simulator with Behavioral Authentication
 Designed a gamified cybersecurity system integrating machine learning-based intrusion detection and keystroke dynamics for behavioral authentication, enabling adaptive defense against evolving attack patterns.
 
-## 🚀 Key Features
+##  Key Features
 
-### 🔹 1. Attack Simulation Engine
+###  1. Attack Simulation Engine
 - SQL Injection & XSS simulation environment  
 - Real-time feedback (success / blocked)  
 - Gamified scoring system (User vs System)  
 
 ---
 
-### 🔹 2. Dual Defense System
+###  2. Dual Defense System
 
-#### 🟢 Normal Mode
+####  Normal Mode
 - Rule-based detection (keywords, patterns)  
 
-#### 🔴 ML Defense Mode
+####  ML Defense Mode
 - Machine Learning-based filtering  
 - Adaptive learning:
   - Successful attacks are learned  
@@ -23,16 +23,16 @@ Designed a gamified cybersecurity system integrating machine learning-based intr
 
 ---
 
-### 🔹 3. Reward-Based Privilege Escalation
+###  3. Reward-Based Privilege Escalation
 - Successful attack reveals admin credentials  
 - Leads to a secure admin authentication system  
 
 ---
 
-### 🔹 4. Behavioral Authentication (Core Innovation)
+###  4. Behavioral Authentication (Core Innovation)
 - Login requires:
-  - ✅ Correct credentials  
-  - ✅ Matching typing behavior  
+  -  Correct credentials  
+  -  Matching typing behavior  
 
 - Uses:
   - Keystroke dynamics  
@@ -41,11 +41,13 @@ Designed a gamified cybersecurity system integrating machine learning-based intr
 
 ---
 
-### 🔹 5. Admin Enrollment System
+###  5. Admin Enrollment System
 - New admins must:
   - Enter password  
   - Repeat typing 5–10 times  
 
 - System:
   - Learns behavioral typing patterns  
-  - Builds a personalized authentication model  
+  - Builds a personalized authentication model
+
+ ## System Workflow
